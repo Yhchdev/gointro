@@ -11,7 +11,7 @@ import (
 func ArraySource(a ...int) <-chan int {
 	ch := make(chan int)
 	go func() {
-		for _,v := range a{
+		for _, v := range a {
 			ch <- v
 		}
 		close(ch)
@@ -24,16 +24,16 @@ func InMemSort(in <-chan int) <-chan int {
 	out := make(chan int)
 
 	go func() {
-		a := [] int{}
+		a := []int{}
 		//read
-		for v := range in{
+		for v := range in {
 			a = append(a, v)
 		}
 		//sort
 		sort.Ints(a)
 
 		//output
-		for _,v := range a{
+		for _, v := range a {
 			out <- v
 		}
 		close(out)
@@ -42,23 +42,22 @@ func InMemSort(in <-chan int) <-chan int {
 	return out
 }
 
-
 // mearge
-func Mearge(in1,in2 <-chan int) <-chan int{
+func Mearge(in1, in2 <-chan int) <-chan int {
 	out := make(chan int)
 	go func() {
-		v1,ok1 := <- in1
-		v2,ok2 := <- in2
+		v1, ok1 := <-in1
+		v2, ok2 := <-in2
 
 		for ok1 || ok2 {
 			// in2 的内容已经完了
-			if !ok2 || (ok1 && v1 <= v2){
+			if !ok2 || (ok1 && v1 <= v2) {
 				out <- v1
 				// 更新v1,ok1的值
-				v1,ok1 = <- in1
-			}else{
+				v1, ok1 = <-in1
+			} else {
 				out <- v2
-				v2,ok2 = <- in2
+				v2, ok2 = <-in2
 			}
 		}
 		close(out)
@@ -66,18 +65,20 @@ func Mearge(in1,in2 <-chan int) <-chan int{
 	return out
 }
 
-
-func ReadSource(reader io.Reader) <- chan int{
+// 分块读取
+func ReadSource(reader io.Reader, chunkSize int) <-chan int {
 	out := make(chan int)
 	go func() {
-		buffer := make([]byte,8)
-		for{
-			n,err := reader.Read(buffer)
-			if n>0{
+		buffer := make([]byte, 8)
+		byteReade := 0
+		for {
+			n, err := reader.Read(buffer)
+			byteReade += n
+			if n > 0 {
 				v := int(binary.BigEndian.Uint64(buffer))
 				out <- v
 			}
-			if err != nil{
+			if err != nil || chunkSize != -1 && byteReade >= chunkSize {
 				break
 			}
 		}
@@ -86,19 +87,19 @@ func ReadSource(reader io.Reader) <- chan int{
 	return out
 }
 
-func WriterSink(writer io.Writer,in <- chan int)  {
-	for v := range in{
-		buffer := make([]byte,8)
+func WriterSink(writer io.Writer, in <-chan int) {
+	for v := range in {
+		buffer := make([]byte, 8)
 		binary.BigEndian.PutUint64(buffer, uint64(v))
 		writer.Write(buffer)
 	}
 }
 
 // 生成随机数
-func RandomSource(count int) <-chan int{
+func RandomSource(count int) <-chan int {
 	out := make(chan int)
 	go func() {
-		for i:=0;i<count;i++{
+		for i := 0; i < count; i++ {
 			out <- rand.Int()
 		}
 		close(out)
@@ -107,8 +108,8 @@ func RandomSource(count int) <-chan int{
 }
 
 // 多路两两归并
-func MergeN(inputs ... <- chan int,) <- chan int{
-	if len(inputs) == 1{
+func MergeN(inputs ...<-chan int) <-chan int {
+	if len(inputs) == 1 {
 		return inputs[0]
 	}
 	m := len(inputs) / 2

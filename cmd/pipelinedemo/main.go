@@ -8,41 +8,38 @@ import (
 )
 
 func main() {
-	const filename = "large.in"
-	const count = 100000000 // 100 M->000 byte->000
-	f,err := os.Create(filename)
-	if err != nil{
+	const filename = "small.in"
+	const count = 64 // 100 M->000 byte->000
+	f, err := os.Create(filename)
+	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 	p := pipeline.RandomSource(count)
 	writer := bufio.NewWriter(f)
-	pipeline.WriterSink(writer,p)
+	pipeline.WriterSink(writer, p)
 	writer.Flush()
 
-
-
-	fr,err := os.Open(filename)
+	fr, err := os.Open(filename)
 	reader := bufio.NewReader(fr)
-	p = pipeline.ReadSource(reader)
-	i := 0;
-	for v := range p{
+	p = pipeline.ReadSource(reader, -1)
+	i := 0
+	for v := range p {
 		fmt.Println(v)
 		i++
-		if i > 10{
+		if i > 10 {
 			break
 		}
 	}
 
-
 }
 
-func meargeDemo()  {
+func meargeDemo() {
 	p := pipeline.Mearge(
-		pipeline.InMemSort(pipeline.ArraySource(3,2,6,7,4)),
-		pipeline.InMemSort(pipeline.ArraySource(4,9,8,5,1)))
+		pipeline.InMemSort(pipeline.ArraySource(3, 2, 6, 7, 4)),
+		pipeline.InMemSort(pipeline.ArraySource(4, 9, 8, 5, 1)))
 
-	for v := range p{
+	for v := range p {
 		fmt.Println(v)
 	}
 }
